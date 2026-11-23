@@ -166,10 +166,9 @@
 
     <script>
         // Data URLs (Try local first, fallback to raw GitHub to avoid CORS/path issues on GH Pages)
-        const localDataUrl = '../../data/hdb_resale_sample.csv';
-        const remoteDataUrl = 'https://raw.githubusercontent.com/nus-msba-antigravity-2026/nus-msba-antigravity-lab-2026/main/data/hdb_resale_sample.csv';
+        const dataUrl = 'https://raw.githubusercontent.com/nus-msba-antigravity-2026/nus-msba-antigravity-lab-2026/main/data/hdb_resale_sample.csv';
 
-        Papa.parse(localDataUrl, {
+        Papa.parse(dataUrl, {
             download: true,
             header: true,
             dynamicTyping: true,
@@ -177,15 +176,8 @@
                 processData(results.data);
             },
             error: function(err) {
-                console.warn("Local fetch failed, trying remote URL...", err);
-                Papa.parse(remoteDataUrl, {
-                    download: true,
-                    header: true,
-                    dynamicTyping: true,
-                    complete: function(results) {
-                        processData(results.data);
-                    }
-                });
+                document.getElementById('loading').innerText = 'Error loading data: ' + err.message + '. Please check the console.';
+                console.error(err);
             }
         });
 
