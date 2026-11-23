@@ -3,53 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World - Sharmishtha-b</title>
+    <title>HDB Resale Dynamics Dashboard - Sharmishtha-b</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
     <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
             margin: 0;
-            color: #333;
+            padding: 0;
         }
-        .card {
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 2rem;
             text-align: center;
-            max-width: 600px;
-            width: 90%;
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
+        header h1 {
+            margin: 0 0 0.5rem 0;
         }
-        h3 {
-            color: #7f8c8d;
-            font-weight: normal;
-            margin-bottom: 30px;
+        header p {
+            margin: 0;
+            opacity: 0.8;
         }
-        .badge {
-            display: inline-block;
-            background-color: #d4edda;
-            color: #155724;
-            padding: 10px 20px;
-            border-radius: 50px;
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            border-top: 4px solid var(--accent);
+        }
+        .kpi-value {
+            font-size: 2rem;
             font-weight: bold;
-            font-size: 0.9em;
-            border: 1px solid #c3e6cb;
+            color: var(--accent);
+            margin: 0.5rem 0;
+        }
+        .kpi-label {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .chart-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .insights-panel {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        .insights-panel h2 {
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 0.5rem;
+        }
+        .insights-panel ul {
+            line-height: 1.6;
+            color: var(--secondary);
+        }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+            color: var(--accent);
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Hi NUS Antigravity Hackathon! I am Sharmishtha-b</h1>
-        <h3>NUS MSBA Build with Antigravity Hands-on Lab (2026-11-23)</h3>
-        <div class="badge">Status: Initial Environment Verification Passed ✅</div>
+
+    <header>
+        <h1>Singapore Housing Affordability & Resale Dynamics</h1>
+        <p>Interactive Analysis Dashboard | Author: Sharmishtha-b | NUS MSBA</p>
+    </header>
+
+    <div class="container">
+        <div id="loading" class="loading">Loading and parsing data...</div>
+        
+        <div id="dashboard" style="display: none;">
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Avg Resale Price</div>
+                    <div class="kpi-value" id="kpi-avg-price">-</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Primary Price Driver</div>
+                    <div class="kpi-value">Floor Area</div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d;">46.6% Variance Explained</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Location Premium</div>
+                    <div class="kpi-value">~100%</div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d;">Central vs Non-Mature ($/sqm)</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <h3>What drives HDB Resale Prices? (Variance Explained)</h3>
+                    <canvas id="varianceChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Average Price by Town (Top & Bottom 5)</h3>
+                    <canvas id="townChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin-bottom: 2rem;">
+                <h3>Price vs Floor Area (sqm)</h3>
+                <canvas id="scatterChart" height="100"></canvas>
+            </div>
+
+            <!-- Insights Panel -->
+            <div class="insights-panel">
+                <h2>Executive Insights & Strategic Recommendations</h2>
+                <ul>
+                    <li><strong>Space is the Ultimate Premium:</strong> Floor area alone explains nearly half (46.6%) of the variance in HDB resale prices. Every additional square meter translates significantly to the final transaction caveat.</li>
+                    <li><strong>Location Hierarchy:</strong> Town location is the second most crucial driver (21.3% variance). Premium mature estates like Central Area and Bukit Timah command over $6,400 to $7,400 per square meter, nearly double the unit rate of non-mature estates like Choa Chu Kang and Woodlands (~$3,500/sqm).</li>
+                    <li><strong>Lease Decay Matters:</strong> Remaining lease explains ~17.7% of price variance. Buyers actively discount older flats, emphasizing the importance of asset lifespan in long-term affordability planning.</li>
+                    <li><strong>Strategic Recommendation for Buyers:</strong> First-time homebuyers prioritizing space over location should target non-mature estates in the North and West regions to maximize square footage per dollar. Conversely, those prioritizing long-term capital preservation should balance mature locations with healthy remaining lease durations (>60 years).</li>
+                </ul>
+            </div>
+        </div>
     </div>
+
+    <script>
+        // Data URLs (Try local first, fallback to raw GitHub to avoid CORS/path issues on GH Pages)
+        const localDataUrl = '../../data/hdb_resale_sample.csv';
+        const remoteDataUrl = 'https://raw.githubusercontent.com/nus-msba-antigravity-2026/nus-msba-antigravity-lab-2026/main/data/hdb_resale_sample.csv';
+
+        Papa.parse(localDataUrl, {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                processData(results.data);
+            },
+            error: function(err) {
+                console.warn("Local fetch failed, trying remote URL...", err);
+                Papa.parse(remoteDataUrl, {
+                    download: true,
+                    header: true,
+                    dynamicTyping: true,
+                    complete: function(results) {
+                        processData(results.data);
+                    }
+                });
+            }
+        });
+
+        function processData(data) {
+            // Filter invalid rows
+            const validData = data.filter(d => d.resale_price && d.floor_area_sqm && d.town);
+            
+            // 1. KPI: Avg Price
+            const avgPrice = validData.reduce((sum, d) => sum + d.resale_price, 0) / validData.length;
+            document.getElementById('kpi-avg-price').innerText = '$' + Math.round(avgPrice).toLocaleString();
+
+            // 2. Aggregations for Town Chart
+            const townGroups = {};
+            validData.forEach(d => {
+                if(!townGroups[d.town]) townGroups[d.town] = { sum: 0, count: 0 };
+                townGroups[d.town].sum += d.resale_price;
+                townGroups[d.town].count += 1;
+            });
+            const townAvgs = Object.keys(townGroups).map(t => ({
+                town: t,
+                avg: townGroups[t].sum / townGroups[t].count
+            })).sort((a,b) => b.avg - a.avg);
+
+            const topBottomTowns = [...townAvgs.slice(0,5), ...townAvgs.slice(-5)];
+
+            // 3. Scatter Data
+            const scatterData = validData.map(d => ({
+                x: d.floor_area_sqm,
+                y: d.resale_price
+            }));
+
+            // Reveal Dashboard
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+
+            renderCharts(topBottomTowns, scatterData);
+        }
+
+        function renderCharts(townData, scatterData) {
+            Chart.defaults.color = '#34495e';
+            Chart.defaults.font.family = "'Segoe UI', sans-serif";
+
+            // Chart 1: Variance Explained (Hardcoded from Python ML output)
+            new Chart(document.getElementById('varianceChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Floor Area (46.6%)', 'Town/Location (21.3%)', 'Remaining Lease (17.7%)', 'Storey Height (9.6%)', 'Flat Type (4.8%)'],
+                    datasets: [{
+                        data: [46.6, 21.3, 17.7, 9.6, 4.8],
+                        backgroundColor: ['#3498db', '#2ecc71', '#f1c40f', '#e67e22', '#9b59b6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+
+            // Chart 2: Average Price by Town
+            new Chart(document.getElementById('townChart'), {
+                type: 'bar',
+                data: {
+                    labels: townData.map(d => d.town),
+                    datasets: [{
+                        label: 'Avg Resale Price ($)',
+                        data: townData.map(d => d.avg),
+                        backgroundColor: townData.map((d, i) => i < 5 ? '#e74c3c' : '#3498db')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { callback: value => '$' + (value/1000) + 'k' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Chart 3: Scatter Plot
+            new Chart(document.getElementById('scatterChart'), {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Resale Transactions',
+                        data: scatterData,
+                        backgroundColor: 'rgba(52, 152, 219, 0.4)',
+                        borderColor: 'rgba(52, 152, 219, 0.8)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Floor Area (sqm)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Resale Price ($)' },
+                            ticks: { callback: value => '$' + (value/1000) + 'k' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
